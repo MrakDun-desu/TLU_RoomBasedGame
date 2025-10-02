@@ -1,8 +1,8 @@
 {
-  "name": "tlu-games-ai",
-  "homepage": "https://mrakdun-desu.github.io/tlu-games-ai/",
+  "name": "TLU_RoomBasedGame",
+  "homepage": "https://mrakdun-desu.github.io/TLU_RoomBasedGame/",
   "private": false,
-  "version": "0.0.2",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
