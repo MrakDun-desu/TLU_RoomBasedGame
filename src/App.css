@@ -1,0 +1,22 @@
+.content {
+  max-inline-size: 1024px;
+  box-sizing: content-box;
+  padding: 1em;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+}
+
+.room-buttons {
+  display: flex;
+  gap: 1em;
+  justify-content: space-between;
+}
+
+.join-form {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+}

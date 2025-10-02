@@ -1,0 +1,54 @@
+.reversi-container {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  max-width: 720px;
+  margin: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.reversi-cell {
+  border: 1px solid var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    border-radius: 50%;
+    display: block;
+    height: 80%;
+    width: 80%;
+
+  }
+
+  &.white::after {
+    content: "";
+    background-color: whitesmoke;
+    border: 1px solid black;
+    box-shadow: 5px 5px 2px 0 rgba(0, 0, 0, 0.75);
+  }
+
+  &.black::after {
+    content: "";
+    background-color: black;
+    border: 1px solid whitesmoke;
+    box-shadow: 5px 5px 2px 0 rgba(0, 0, 0, 0.75);
+  }
+}
+
+.game-info {
+  display: flex;
+  justify-content: space-between;
+
+  p {
+    margin: 0;
+  }
+
+  &+.reversi-container {
+    margin-top: 1em;
+  }
+}
+
+.turn-indicator {
+  font-size: 1.2em;
+  text-align: center;
+}
