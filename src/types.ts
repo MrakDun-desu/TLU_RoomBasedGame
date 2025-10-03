@@ -1,5 +1,7 @@
 export interface RoomInfo {
-  players: Record<string, boolean>
+  whiteId?: string // ID of the white player
+  blackId?: string // ID of the black player
+  connectedUsers: Record<string, string> // map of user ID to username
   gameState: ReversiState
 };
 
@@ -9,14 +11,14 @@ export interface Vec2 {
 }
 
 export interface ReversiState {
-  blackPositions: Vec2[]
-  whitePositions: Vec2[]
-  player1Turn: boolean
+  blackPositions?: Vec2[]
+  whitePositions?: Vec2[]
+  whiteTurn: boolean
 }
 
-export const DefaultReversiState = {
+export const DefaultReversiState: ReversiState = {
   blackPositions: [{ x: 3, y: 3 }, { x: 4, y: 4 }],
   whitePositions: [{ x: 3, y: 4 }, { x: 4, y: 3 }],
-  player1Turn: true
+  whiteTurn: true
 }
 

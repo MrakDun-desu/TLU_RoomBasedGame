@@ -4,6 +4,7 @@
   max-width: 720px;
   margin: auto;
   aspect-ratio: 1 / 1;
+  position: relative;
 }
 
 .reversi-cell {
@@ -32,6 +33,33 @@
     background-color: black;
     border: 1px solid whitesmoke;
     box-shadow: 5px 5px 2px 0 rgba(0, 0, 0, 0.75);
+  }
+
+  &.next::after {
+    filter: opacity(0.2);
+  }
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover::after {
+      filter: opacity(0.5);
+    }
+  }
+}
+
+.result-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1em;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+
+  h2 {
+    font-size: 2em;
   }
 }
 

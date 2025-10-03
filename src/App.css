@@ -11,12 +11,18 @@ h1 {
 
 .room-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 1em;
   justify-content: space-between;
 }
 
-.join-form {
+.join-form,
+.username {
   display: flex;
-  gap: 0.5em;
+  gap: 1em;
   align-items: center;
+}
+
+.join-form input {
+  width: 4em;
 }

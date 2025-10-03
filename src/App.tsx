@@ -6,22 +6,22 @@ import ReversiGame from './components/ReversiGame';
 import { getRandomString } from './helpers';
 import { deleteApp, initializeApp } from 'firebase/app';
 
-// TODO: Change player numbers to registering white and black by ID
 // TODO: Add button to reset game state
 // TODO: Program game logic
 // Optional  TODO: Add minimax
 interface RoomDetails {
   id: string,
   roomInfo: RoomInfo,
-  playerId: string,
-  playerNum: number,
-  disconnectRef: firebaseDb.OnDisconnect
+  userId: string,
+  disconnectRefs: firebaseDb.OnDisconnect[]
 }
 
 const roomTempl = (roomId: string) => `rooms/${roomId}`;
-const playerTempl = (roomId: string, playerId: string) => `rooms/${roomId}/players/${playerId}`;
 const gameStateTempl = (roomId: string) => `rooms/${roomId}/gameState`;
-const playersTempl = (roomId: string) => `rooms/${roomId}/players`;
+const usersTempl = (roomId: string) => `rooms/${roomId}/connectedUsers`;
+const userTempl = (roomId: string, playerId: string) => `rooms/${roomId}/connectedUsers/${playerId}`;
+const whiteIdTempl = (roomId: string) => `rooms/${roomId}/whiteId`
+const blackIdTempl = (roomId: string) => `rooms/${roomId}/blackId`
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNGsVn4x0MfSIc27bLI7xb3xrAkvutSK0",
@@ -41,6 +41,7 @@ window.addEventListener("unload", () => deleteApp(app));
 const App = () => {
   const [waitStatus, setWaitStatus] = useState({ waiting: false, message: "" });
   const [roomIdToJoin, setRoomIdToJoin] = useState("");
+  const [username, setUsername] = useState("");
   const [room, setRoom] = useState<RoomDetails | null>(null);
 
   const onRoomInfoChange = (snapshot: firebaseDb.DataSnapshot) => {
@@ -56,10 +57,22 @@ const App = () => {
     if (room !== null) {
       const roomRef = firebaseDb.ref(db, roomTempl(room.id));
       firebaseDb.off(roomRef, "value", onRoomInfoChange);
-      firebaseDb.remove(firebaseDb.ref(db, playerTempl(room.id, room.playerId)));
-      room.disconnectRef.cancel();
+      await firebaseDb.remove(firebaseDb.ref(db, userTempl(room.id, room.userId)));
+      if (room.roomInfo.whiteId === room.userId) {
+        await firebaseDb.remove(firebaseDb.ref(db, whiteIdTempl(room.id)));
+      }
+      if (room.roomInfo.blackId === room.userId) {
+        await firebaseDb.remove(firebaseDb.ref(db, blackIdTempl(room.id)));
+      }
+      room.disconnectRefs.forEach(ref => ref.cancel());
     }
     if (id === null) {
+      setRoom(null);
+      return;
+    }
+
+    if (username === "") {
+      alert("Specify your username before joining a room");
       setRoom(null);
       return;
     }
@@ -72,27 +85,27 @@ const App = () => {
     }
 
     setWaitStatus({ waiting: true, message: "Joining room..." });
-    const playerNum = roomInfo !== null
-      ? Object.keys(roomInfo.players).length + 1
-      : 1;
-    const playerRef = await firebaseDb.push(firebaseDb.ref(db, playersTempl(id)), true);
+    const userRef = await firebaseDb.push(firebaseDb.ref(db, usersTempl(id)), username);
     if (roomInfo === null) {
       await firebaseDb.set(firebaseDb.ref(db, gameStateTempl(id)), DefaultReversiState)
     }
-    const disconnectRef = firebaseDb.onDisconnect(playerRef);
+    const disconnectRef = firebaseDb.onDisconnect(userRef);
     disconnectRef.remove();
 
+    const userId = userRef.key!;
+    const players: Record<string, string> = {}
+    players[userId] = username
+
     roomInfo ??= {
-      players: {},
+      connectedUsers: players,
       gameState: DefaultReversiState
     }
 
     setRoom({
       id,
       roomInfo,
-      playerId: playerRef.key!,
-      playerNum,
-      disconnectRef
+      userId: userId,
+      disconnectRefs: [disconnectRef]
     });
 
     firebaseDb.onValue(roomRef, onRoomInfoChange);
@@ -114,14 +127,15 @@ const App = () => {
       let repeatCounter = repeatAmount;
 
       while (true) {
-        roomId = getRandomString(4);
+        roomId = getRandomString(letterCount);
         roomRef = firebaseDb.ref(db, roomTempl(roomId));
-        let snapshot = await firebaseDb.get(roomRef);
-        if (!snapshot.exists() || Object.keys(snapshot.val().players).length === 0) {
+        const snapshot = await firebaseDb.get(roomRef);
+        const snapshotVal: RoomInfo | null = snapshot.val();
+        if (!snapshot.exists() || Object.keys(snapshotVal!.connectedUsers).length === 0) {
           break;
         }
         repeatCounter--;
-        if (repeatCounter == 0) {
+        if (repeatCounter === 0) {
           repeatCounter = repeatAmount;
           letterCount++;
         }
@@ -169,17 +183,30 @@ const App = () => {
     <div className="content">
       <h1>Reversi Online</h1>
       <div className="room-buttons">
+        {
+          room === null &&
+          <div className="username">
+            <label htmlFor="username">Username:</label>
+            <input
+              type="text"
+              name="username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+            />
+          </div>
+        }
         <form onSubmit={e => { e.preventDefault(); createRoom(); }}>
           <button type="submit">Create a room</button>
         </form>
         <form className="join-form" onSubmit={e => { e.preventDefault(); joinRoom(); }}>
+          <button type="submit">Join a room</button>
           <label htmlFor="roomId">Room ID:</label>
           <input
             type="text"
+            name="roomId"
             value={roomIdToJoin}
             onChange={e => setRoomIdToJoin(e.target.value.toUpperCase())}
           />
-          <button type="submit">Join a room</button>
         </form>
         {
           room !== null &&
@@ -195,17 +222,65 @@ const App = () => {
       {
         room !== null &&
         <>
-          <h2>Connected to room {room.id}</h2>
+          <h2>Connected to room {room.id} as {room.roomInfo.connectedUsers[room.userId]}</h2>
+          {
+            room.roomInfo.whiteId !== undefined
+              ? <p>
+                White player: {
+                  room.roomInfo.whiteId === room.userId
+                    ? <strong>{room.roomInfo.connectedUsers[room.roomInfo.whiteId]}</strong>
+                    : room.roomInfo.connectedUsers[room.roomInfo.whiteId]
+
+                }
+              </p>
+              : room.userId === room.roomInfo.whiteId || room.userId === room.roomInfo.blackId
+                ? ""
+                : <button
+                  style={{ marginRight: "1em" }}
+                  onClick={() => {
+                    const whiteRef = firebaseDb.ref(db, whiteIdTempl(room.id));
+                    firebaseDb.set(whiteRef, room.userId);
+                    const whiteDisconnect = firebaseDb.onDisconnect(whiteRef);
+                    whiteDisconnect.remove();
+                    room.disconnectRefs.push(whiteDisconnect);
+                  }}
+                >
+                  Join as white
+                </button>
+          }
+          {
+            room.roomInfo.blackId !== undefined
+              ? <p>
+                Black player: {
+                  room.roomInfo.blackId === room.userId
+                    ? <strong>{room.roomInfo.connectedUsers[room.roomInfo.blackId]}</strong>
+                    : room.roomInfo.connectedUsers[room.roomInfo.blackId]
+                }
+              </p>
+              : room.userId === room.roomInfo.whiteId || room.userId === room.roomInfo.blackId
+                ? ""
+                : <button
+                  onClick={() => {
+                    const blackRef = firebaseDb.ref(db, blackIdTempl(room.id));
+                    firebaseDb.set(blackRef, room.userId);
+                    const blackDisconect = firebaseDb.onDisconnect(blackRef);
+                    blackDisconect.remove();
+                    room.disconnectRefs.push(blackDisconect);
+                  }}
+                >
+                  Join as black
+                </button>
+          }
           <ReversiGame
             roomInfo={room.roomInfo}
-            playerNum={room.playerNum}
+            playerId={room.userId}
             onStateChange={newState => {
               firebaseDb.set(firebaseDb.ref(db, gameStateTempl(room.id)), newState)
             }}
           />
         </>
       }
-    </div>
+    </div >
   )
 }
 
