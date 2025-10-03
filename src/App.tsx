@@ -6,9 +6,6 @@ import ReversiGame from './components/ReversiGame';
 import { getRandomString } from './helpers';
 import { deleteApp, initializeApp } from 'firebase/app';
 
-// TODO: Add button to reset game state
-// TODO: Program game logic
-// Optional  TODO: Add minimax
 interface RoomDetails {
   id: string,
   roomInfo: RoomInfo,
@@ -131,7 +128,7 @@ const App = () => {
         roomRef = firebaseDb.ref(db, roomTempl(roomId));
         const snapshot = await firebaseDb.get(roomRef);
         const snapshotVal: RoomInfo | null = snapshot.val();
-        if (!snapshot.exists() || Object.keys(snapshotVal!.connectedUsers).length === 0) {
+        if (!snapshot.exists() || snapshotVal === null || Object.keys(snapshotVal.connectedUsers).length === 0) {
           break;
         }
         repeatCounter--;
@@ -220,7 +217,7 @@ const App = () => {
         <div className="waiting-message">{waitStatus.message}</div>
       }
       {
-        room !== null &&
+        (room !== null && room.roomInfo.connectedUsers) &&
         <>
           <h2>Connected to room {room.id} as {room.roomInfo.connectedUsers[room.userId]}</h2>
           {
