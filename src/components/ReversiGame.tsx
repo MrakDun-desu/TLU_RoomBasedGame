@@ -189,35 +189,31 @@ const ReversiGame = (
               return <div
                 className={className}
                 key={`${x}${y}`}
+                onMouseOver={() => {
+                  if (nextPos === undefined) {
+                    return
+                  }
+                }}
                 onClick={() => {
                   if (nextPos === undefined || !isCurrentTurn) {
                     return;
                   }
                   gameState.whitePositions ??= []
                   gameState.blackPositions ??= []
-                  if (gameState.whiteTurn) {
-                    gameState.whitePositions.push({ x, y })
-                    for (const dir of nextPos.dirs) {
-                      let pos = vec2Add({ x, y }, dir);
-                      let removeIndex = gameState.blackPositions.findIndex(val => vec2Eq(val, pos))
-                      while (removeIndex !== -1) {
-                        gameState.whitePositions.push(pos)
-                        gameState.blackPositions.splice(removeIndex, 1)
-                        pos = vec2Add(pos, dir)
-                        removeIndex = gameState.blackPositions.findIndex(val => vec2Eq(val, pos))
+                  const [toAdd, toRemove] = gameState.whiteTurn
+                    ? [gameState.whitePositions, gameState.blackPositions]
+                    : [gameState.blackPositions, gameState.whitePositions]
+                  toAdd.push({ x, y })
+                  for (const dir of nextPos.dirs) {
+                    let pos = { x, y }
+                    while (true) {
+                      pos = vec2Add(pos, dir);
+                      const removeIndex = toRemove.findIndex(val => vec2Eq(val, pos))
+                      if (removeIndex === -1) {
+                        break;
                       }
-                    }
-                  } else {
-                    gameState.blackPositions.push({ x, y })
-                    for (const dir of nextPos.dirs) {
-                      let pos = vec2Add({ x, y }, dir);
-                      let removeIndex = gameState.whitePositions.findIndex(val => vec2Eq(val, pos))
-                      while (removeIndex !== -1) {
-                        gameState.blackPositions.push(pos)
-                        gameState.whitePositions.splice(removeIndex, 1)
-                        pos = vec2Add(pos, dir)
-                        removeIndex = gameState.whitePositions.findIndex(val => vec2Eq(val, pos))
-                      }
+                      toAdd.push(pos)
+                      toRemove.splice(removeIndex, 1)
                     }
                   }
                   gameState.whiteTurn = !gameState.whiteTurn;

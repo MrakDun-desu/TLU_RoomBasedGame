@@ -227,7 +227,11 @@ const App = () => {
                   room.roomInfo.whiteId === room.userId
                     ? <strong>{room.roomInfo.connectedUsers[room.roomInfo.whiteId]}</strong>
                     : room.roomInfo.connectedUsers[room.roomInfo.whiteId]
-
+                }
+                {
+                  room.roomInfo.blackId !== undefined
+                    ? ", score: " + room.roomInfo.gameState.whitePositions?.length
+                    : ""
                 }
               </p>
               : room.userId === room.roomInfo.whiteId || room.userId === room.roomInfo.blackId
@@ -252,6 +256,11 @@ const App = () => {
                   room.roomInfo.blackId === room.userId
                     ? <strong>{room.roomInfo.connectedUsers[room.roomInfo.blackId]}</strong>
                     : room.roomInfo.connectedUsers[room.roomInfo.blackId]
+                }
+                {
+                  room.roomInfo.whiteId !== undefined
+                    ? ", score: " + room.roomInfo.gameState.blackPositions?.length
+                    : ""
                 }
               </p>
               : room.userId === room.roomInfo.whiteId || room.userId === room.roomInfo.blackId
